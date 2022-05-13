@@ -6,6 +6,7 @@ using FinancialHub.Domain.Filters;
 using FinancialHub.Domain.Responses.Errors;
 using FinancialHub.Domain.Responses.Success;
 using FinancialHub.Domain.Interfaces.Services;
+using System.Linq;
 
 namespace FinancialHub.WebApi.Controllers
 {
@@ -34,7 +35,7 @@ namespace FinancialHub.WebApi.Controllers
 
         [HttpPost]
         [ProducesResponseType(typeof(SaveResponse<TransactionModel>), 200)]
-        [ProducesResponseType(typeof(ValidationErrorResponse), 400)]
+        [ProducesResponseType(typeof(SaveResponse<TransactionModel>), 400)]
         /// <summary>
         /// Creates an transaction on database (will be changed to only one user)
         /// </summary>
@@ -46,8 +47,12 @@ namespace FinancialHub.WebApi.Controllers
             if (result.HasError)
             {
                 return StatusCode(
-                    result.Error.Code,
-                    new ValidationErrorResponse(result.Error.Message)
+                    400,
+                    new SaveResponse<TransactionModel>(
+                        result.Data,
+                        result.ToString(),
+                        result.Errors.Select(x => new ValidationErrorResponse(x.Message)).ToArray()
+                    )
                  );
             }
 

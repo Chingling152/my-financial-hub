@@ -46,14 +46,33 @@ namespace FinancialHub.Services.Services
             return true;
         }
 
+        private async Task<ServiceResult<bool>> Validate(TransactionEntity transaction)
+        {
+            var result = new ServiceResult<bool>();
+
+            var account = await this.accountsRepository.GetByIdAsync(transaction.AccountId);
+            if (account == null)
+            {
+                result.Errors.Add(new NotFoundError($"Not found Account with id {transaction.AccountId}"));
+            }
+
+            var category = await this.categoriesRepository.GetByIdAsync(transaction.CategoryId);
+            if (category == null)
+            {
+                result.Errors.Add(new NotFoundError($"Not found Category with id {transaction.CategoryId}"));
+            }
+
+            return result;
+        }
+
         public async Task<ServiceResult<TransactionModel>> CreateAsync(TransactionModel category)
         {
             var entity = mapper.Map<TransactionEntity>(category);
 
-            var validation = await this.ValidateTransaction(entity);
-            if (validation.HasError)
+            var validationResult = await this.Validate(entity);
+            if (validationResult.HasError)
             {
-                return new ServiceResult<TransactionModel>(error: validation.Error);
+                return new ServiceResult<TransactionModel>(default, validationResult.Errors);
             }
 
             entity = await this.repository.CreateAsync(entity);
